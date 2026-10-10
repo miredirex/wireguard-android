@@ -43,6 +43,26 @@
                 android:text="@string/include_in_tunnel" />
         </com.google.android.material.tabs.TabLayout>
 
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/package_prefix_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:hint="@string/package_prefix_hint"
+            app:endIconContentDescription="@string/package_prefix_apply"
+            app:endIconDrawable="@drawable/ic_action_select_all"
+            app:endIconMode="custom">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/package_prefix_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionDone"
+                android:inputType="textNoSuggestions|textVisiblePassword"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"

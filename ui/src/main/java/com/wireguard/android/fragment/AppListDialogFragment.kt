@@ -11,9 +11,11 @@ import android.content.pm.PackageManager
 import android.content.pm.PackageManager.PackageInfoFlags
 import android.os.Build
 import android.os.Bundle
+import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.widget.doAfterTextChanged
 import androidx.databinding.Observable
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
@@ -119,6 +121,13 @@ class AppListDialogFragment : DialogFragment() {
         alertDialogBuilder.setPositiveButton(" ") { _, _ -> setSelectionAndDismiss() }
         alertDialogBuilder.setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
         alertDialogBuilder.setNeutralButton(R.string.toggle_all) { _, _ -> }
+        binding.packagePrefixLayout.setEndIconOnClickListener { selectByPackagePrefix(binding) }
+        binding.packagePrefixText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId != EditorInfo.IME_ACTION_DONE) return@setOnEditorActionListener false
+            selectByPackagePrefix(binding)
+            true
+        }
+        binding.packagePrefixText.doAfterTextChanged { binding.packagePrefixLayout.helperText = null }
         binding.fragment = this
         binding.appData = appData
         loadData()
@@ -134,6 +143,21 @@ class AppListDialogFragment : DialogFragment() {
             }
         }
         return dialog
+    }
+
+    private fun selectByPackagePrefix(binding: AppListDialogFragmentBinding) {
+        // "cz, uk." -> ["cz", "uk"]; each prefix matches whole package name segments only,
+        // so "cz" matches "cz.foo.bar" but not "czar.app".
+        val prefixes = binding.packagePrefixText.text.toString()
+            .split(',')
+            .map { it.trim().trimEnd('.') }
+            .filter { it.isNotEmpty() }
+        if (prefixes.isEmpty()) return
+        val matching = appData.filter { app ->
+            prefixes.any { app.packageName.equals(it, ignoreCase = true) || app.packageName.startsWith("$it.", ignoreCase = true) }
+        }
+        matching.forEach { it.isSelected = true }
+        binding.packagePrefixLayout.helperText = resources.getQuantityString(R.plurals.package_prefix_n_matched, matching.size, matching.size)
     }
 
     private fun setSelectionAndDismiss() {
