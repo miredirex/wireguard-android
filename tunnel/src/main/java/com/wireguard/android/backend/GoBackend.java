@@ -307,6 +307,10 @@ public final class GoBackend implements Backend {
                 do {
                     port = ThreadLocalRandom.current().nextInt(4096, 60001);
                 } while (!sendUdpKnock(config, port) && ++attempts < 5);
+
+                final long delayMs = ThreadLocalRandom.current().nextLong(200, 801);
+                Log.i(TAG, "Waiting " + delayMs + " ms after UDP knock");
+                Thread.sleep(delayMs);
                 goConfig = "listen_port=" + port + '\n' + goConfig;
             }
 
