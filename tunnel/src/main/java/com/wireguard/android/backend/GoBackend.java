@@ -23,11 +23,15 @@ import com.wireguard.crypto.Key;
 import com.wireguard.crypto.KeyFormatException;
 import com.wireguard.util.NonNullForAll;
 
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -41,6 +45,7 @@ import androidx.collection.ArraySet;
 @NonNullForAll
 public final class GoBackend implements Backend {
     private static final int DNS_RESOLUTION_RETRIES = 10;
+    private static final byte[] KNOCK_PAYLOAD = "HTTP/1.1 ".getBytes(StandardCharsets.US_ASCII);
     private static final String TAG = "WireGuard/GoBackend";
     @Nullable private static AlwaysOnCallback alwaysOnCallback;
     private static CompletableFuture<VpnService> vpnService = new CompletableFuture<>();
@@ -291,7 +296,19 @@ public final class GoBackend implements Backend {
             }
 
             // Build config
-            final String goConfig = config.toWgUserspaceString();
+            String goConfig = config.toWgUserspaceString();
+
+            // UDP knock: if no ListenPort is configured, pick one ourselves, send a dummy packet
+            // to each peer from it, then have wireguard-go listen on that same port.
+            if (!config.getInterface().getListenPort().isPresent()) {
+                // Retry with a different port if the knock fails (e.g. port already in use).
+                int port;
+                int attempts = 0;
+                do {
+                    port = ThreadLocalRandom.current().nextInt(4096, 60001);
+                } while (!sendUdpKnock(config, port) && ++attempts < 5);
+                goConfig = "listen_port=" + port + '\n' + goConfig;
+            }
 
             // Create the vpn tunnel with android API
             final VpnService.Builder builder = service.getBuilder();
@@ -364,6 +381,27 @@ public final class GoBackend implements Backend {
         }
 
         tunnel.onStateChange(state);
+    }
+
+    /**
+     * Sends a dummy UDP packet from the given local port to each peer endpoint.
+     * Returns false if the knock failed.
+     */
+    private static boolean sendUdpKnock(final Config config, final int port) {
+        try (final DatagramSocket socket = new DatagramSocket(port)) {
+            for (final Peer peer : config.getPeers()) {
+                final InetEndpoint ep = peer.getEndpoint().flatMap(InetEndpoint::getResolved).orElse(null);
+                if (ep == null)
+                    continue;
+                socket.send(new DatagramPacket(KNOCK_PAYLOAD, KNOCK_PAYLOAD.length,
+                        InetAddress.getByName(ep.getHost()), ep.getPort()));
+                Log.i(TAG, "Sent UDP knock to " + ep + " from port " + port);
+            }
+            return true;
+        } catch (final Exception e) {
+            Log.w(TAG, "UDP knock from port " + port + " failed", e);
+            return false;
+        }
     }
 
     /**
