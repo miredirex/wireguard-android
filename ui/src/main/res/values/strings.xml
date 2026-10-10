@@ -180,6 +180,9 @@
     <string name="package_prefix_apply">Select matching apps</string>
     <string name="package_prefix_hint">Select by package prefix (e.g. cz, uk)</string>
     <string name="package_prefix_selected">Selected %s</string>
+    <string name="package_prefix_selected_collapsed">Selected %1$s (%2$s)</string>
+    <string name="package_prefix_selected_expanded">Selected %1$s: %2$s.</string>
+    <string name="package_prefix_see_which">see which</string>
     <string name="parse_error_generic">string</string>
     <string name="parse_error_inet_address">IP address</string>
     <string name="parse_error_inet_endpoint">endpoint</string>

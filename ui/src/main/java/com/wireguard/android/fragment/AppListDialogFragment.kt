@@ -13,7 +13,9 @@ import android.os.Build
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned
+import android.text.method.ScrollingMovementMethod
 import android.text.style.ForegroundColorSpan
+import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
@@ -151,8 +153,6 @@ class AppListDialogFragment : DialogFragment() {
     }
 
     private fun selectByPackagePrefix(binding: AppListDialogFragmentBinding) {
-        // "cz, uk." -> ["cz", "uk"]; each prefix matches whole package name segments only,
-        // so "cz" matches "cz.foo.bar" but not "czar.app".
         val prefixes = binding.packagePrefixText.text.toString()
             .split(',')
             .map { it.trim().trimEnd('.') }
@@ -167,20 +167,40 @@ class AppListDialogFragment : DialogFragment() {
 
     private fun showPackagePrefixResult(binding: AppListDialogFragmentBinding, matching: List<ApplicationData>) {
         val count = resources.getQuantityString(R.plurals.package_prefix_n_matching_apps, matching.size, matching.size)
-        val text = getString(R.string.package_prefix_selected, count)
-        val start = text.indexOf(count)
         val accent = MaterialColors.getColor(binding.packagePrefixResult, com.google.android.material.R.attr.colorSecondary)
         binding.packagePrefixResult.apply {
-            this.text = SpannableString(text).apply {
-                setSpan(ForegroundColorSpan(accent), start, start + count.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            }
             visibility = View.VISIBLE
+            scrollTo(0, 0)
             if (matching.isEmpty()) {
+                text = highlight(getString(R.string.package_prefix_selected, count), accent, count)
                 setOnClickListener(null)
                 isClickable = false
-            } else {
-                setOnClickListener { Toast.makeText(context, matching.joinToString { it.name }, Toast.LENGTH_LONG).show() }
+                return
             }
+            val seeWhich = getString(R.string.package_prefix_see_which)
+            val collapsed = highlight(getString(R.string.package_prefix_selected_collapsed, count, seeWhich), accent, count, seeWhich)
+            val expanded = highlight(getString(R.string.package_prefix_selected_expanded, count, matching.joinToString { it.name }), accent, count)
+            var isExpanded = false
+            text = collapsed
+            movementMethod = ScrollingMovementMethod.getInstance()
+            var scrollYOnDown = 0
+            setOnTouchListener { _, event ->
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) scrollYOnDown = scrollY
+                false
+            }
+            setOnClickListener {
+                if (scrollY != scrollYOnDown) return@setOnClickListener
+                isExpanded = !isExpanded
+                text = if (isExpanded) expanded else collapsed
+                scrollTo(0, 0)
+            }
+        }
+    }
+
+    private fun highlight(text: String, color: Int, vararg parts: String) = SpannableString(text).apply {
+        for (part in parts) {
+            val start = text.indexOf(part)
+            if (start >= 0) setSpan(ForegroundColorSpan(color), start, start + part.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
     }
 
