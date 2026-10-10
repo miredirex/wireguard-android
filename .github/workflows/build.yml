@@ -15,8 +15,15 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+      - uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: gomod-${{ hashFiles('tunnel/tools/libwg-go/go.sum') }}
       - run: mkdir -p ~/.android && echo "${{ secrets.DEBUG_KEYSTORE }}" | base64 -d > ~/.android/debug.keystore
-      - run: ./gradlew :ui:assembleRelease
+      - run: ./gradlew :ui:assembleRelease -x lintVitalRelease -Dorg.gradle.jvmargs=-Xmx2g
       - uses: actions/upload-artifact@v4
         with:
           name: apk
