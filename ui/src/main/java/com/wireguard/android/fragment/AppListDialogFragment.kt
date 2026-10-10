@@ -11,6 +11,10 @@ import android.content.pm.PackageManager
 import android.content.pm.PackageManager.PackageInfoFlags
 import android.os.Build
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.Toast
@@ -20,6 +24,7 @@ import androidx.databinding.Observable
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.wireguard.android.BR
@@ -127,7 +132,7 @@ class AppListDialogFragment : DialogFragment() {
             selectByPackagePrefix(binding)
             true
         }
-        binding.packagePrefixText.doAfterTextChanged { binding.packagePrefixLayout.helperText = null }
+        binding.packagePrefixText.doAfterTextChanged { binding.packagePrefixResult.visibility = View.GONE }
         binding.fragment = this
         binding.appData = appData
         loadData()
@@ -157,7 +162,26 @@ class AppListDialogFragment : DialogFragment() {
             prefixes.any { app.packageName.equals(it, ignoreCase = true) || app.packageName.startsWith("$it.", ignoreCase = true) }
         }
         matching.forEach { it.isSelected = true }
-        binding.packagePrefixLayout.helperText = resources.getQuantityString(R.plurals.package_prefix_n_matched, matching.size, matching.size)
+        showPackagePrefixResult(binding, matching)
+    }
+
+    private fun showPackagePrefixResult(binding: AppListDialogFragmentBinding, matching: List<ApplicationData>) {
+        val count = resources.getQuantityString(R.plurals.package_prefix_n_matching_apps, matching.size, matching.size)
+        val text = getString(R.string.package_prefix_selected, count)
+        val start = text.indexOf(count)
+        val accent = MaterialColors.getColor(binding.packagePrefixResult, com.google.android.material.R.attr.colorSecondary)
+        binding.packagePrefixResult.apply {
+            this.text = SpannableString(text).apply {
+                setSpan(ForegroundColorSpan(accent), start, start + count.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            visibility = View.VISIBLE
+            if (matching.isEmpty()) {
+                setOnClickListener(null)
+                isClickable = false
+            } else {
+                setOnClickListener { Toast.makeText(context, matching.joinToString { it.name }, Toast.LENGTH_LONG).show() }
+            }
+        }
     }
 
     private fun setSelectionAndDismiss() {

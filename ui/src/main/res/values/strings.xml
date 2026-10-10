@@ -50,9 +50,9 @@
         <item quantity="one">Exclude %d app</item>
         <item quantity="other">Exclude %d apps</item>
     </plurals>
-    <plurals name="package_prefix_n_matched">
-        <item quantity="one">Selected %d matching app</item>
-        <item quantity="other">Selected %d matching apps</item>
+    <plurals name="package_prefix_n_matching_apps">
+        <item quantity="one">%d matching app</item>
+        <item quantity="other">%d matching apps</item>
     </plurals>
     <plurals name="persistent_keepalive_seconds_unit">
         <item quantity="one">every second</item>
@@ -179,6 +179,7 @@
     <string name="no_tunnels_error">No tunnels exist</string>
     <string name="package_prefix_apply">Select matching apps</string>
     <string name="package_prefix_hint">Select by package prefix (e.g. cz, uk)</string>
+    <string name="package_prefix_selected">Selected %s</string>
     <string name="parse_error_generic">string</string>
     <string name="parse_error_inet_address">IP address</string>
     <string name="parse_error_inet_endpoint">endpoint</string>

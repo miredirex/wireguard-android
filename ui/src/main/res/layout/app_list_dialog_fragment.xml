@@ -63,6 +63,19 @@
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <TextView
+            android:id="@+id/package_prefix_result"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:background="?attr/selectableItemBackground"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="4dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:visibility="gone"
+            tools:text="Selected 3 matching apps"
+            tools:visibility="visible" />
+
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
